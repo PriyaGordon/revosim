@@ -859,7 +859,6 @@ bool test::testEight(QString &outString)
         else out << "Mask has correct number of bits set... \n";
 
 
-
         simulationManager->hgtSystem->generateTransfer(donorGenome, mask, maskofdonor); //- generate the transfer segment by copying into the mask
 
 
@@ -888,6 +887,8 @@ bool test::testEight(QString &outString)
         if (testFlag) out << "Transfer segement matches donor genome sequence... \n";
 
         // Test 3 - Apply the transformation and check if the recipient genome matches the donor in the transfer position
+        out << "<font face='Courier New' size='6' color='white'><b>\n mask test["<< 0 <<"]:---------------" << simulationManager->printGenome(mask[0])<< "</font><br>";
+
         simulationManager->hgtSystem->transformRecipient(recipentGenome, mask, maskofdonor);
 
             position = 0;
@@ -935,7 +936,61 @@ bool test::testEight(QString &outString)
         }
    }
 
-    //- need to add tests variable prob, length and id matching
+
+   //Test 4 - Checking the max difference id works with new genome
+
+   out << "\n checking the ID system works \n Settings: \n HGT mode = Synonoumous\n Transformable genome words ='0' \n max difference to transform = 2 \n";
+
+   //set settings for hgt transfer test
+   simulationManager->simulationSettings->hgtId = true;
+   simulationManager->simulationSettings->hgtMode = HGT_SYNOYMOUS; // for testing non shifting function
+   // //simulationManager->simulationSettings->hgtMode = HGT_NON_SYNOYMOUS; // for testing the shifting function
+   simulationManager->simulationSettings->genomeSize = 3;
+   simulationManager->hgtSystem->setGenomeWordsFromString("0", MAX_GENOME_WORDS);
+   simulationManager->simulationSettings->maxDifferenceHgt = 2;
+
+   quint32 recipentGenome[3] = {0,0,0};
+   // quint32 donorGenome[3] = {simulationManager->simulationRandoms->rand32(),simulationManager->simulationRandoms->rand32(),simulationManager->simulationRandoms->rand32()};
+
+   quint32 flipped1[3], flipped2[3], flipped3[3];
+   flipped1[0] = recipentGenome[0] ^ (1 << 0);
+   flipped2[0] = flipped1[0] ^ (1 << 1);
+   flipped3[0] = flipped2[0] ^ (1 << 2);
+
+   quint32 mask1[3], mask2[3], mask3[3];
+   mask1[0] = !flipped1[0];
+   mask2[0] = !flipped2[0];
+   mask3[0] = !flipped3[0];
+
+
+   out << "<font face='Courier New' size='6' color='white'><b>\n " << "Recipent genome " << simulationManager->printGenome(recipentGenome[0])<< "</font><br>";
+   out << "<font face='Courier New' size='6' color='white'><b>\n " << "One difference " << simulationManager->printGenome(flipped1[0])<< "</font><br>";
+   out << "<font face='Courier New' size='6' color='white'><b>\n " <<"Two differences " << simulationManager->printGenome(flipped2[0])<< "</font><br>";
+   out << "<font face='Courier New' size='6' color='white'><b>\n " << "Three differences " << simulationManager->printGenome(flipped3[0])<< "</font><br>";
+
+   simulationManager->hgtSystem->transformRecipient(recipentGenome, mask1, flipped1);
+   out << "<font face='Courier New' size='6' color='white'><b>\n " <<"Recipent after transformation with donor (one bit different): " <<simulationManager->printGenome(recipentGenome[0])<< "</font><br>";
+   recipentGenome[0] = 0;
+
+   simulationManager->hgtSystem->transformRecipient(recipentGenome, mask2, flipped2);
+   out << "<font face='Courier New' size='6' color='white'><b>\n " <<"Recipent after transformation with donor (two bit different): " << simulationManager->printGenome(recipentGenome[0])<< "</font><br>";
+   recipentGenome[0] = 0;
+
+   simulationManager->hgtSystem->transformRecipient(recipentGenome, mask3, flipped3);
+   if (recipentGenome[0] == 0)
+   {
+
+    out << "<font face='Courier New' size='6' color='white'><b>\n " <<"Recipent after transformation with donor (three bit different): " << simulationManager->printGenome(recipentGenome[0])<< "</font><br>";
+    out << "<font face='Courier New' size='6' color='white'><b>\n Test passed </font><br>";
+
+   }else{
+       out << "MAX DIFF id broke";
+       testFlag = false;
+   }
+
+
+
+   //- need to add tests variable prob, length and id matching
 
     if (testFlag) out << "\n Tests passed.\n\n";
     return testFlag;

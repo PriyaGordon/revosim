@@ -92,6 +92,7 @@ void HgtSystem::transformRecipient(quint32* genome, quint32* positionMask, quint
             {
                 homologyMask[maskWord] = ~(positionMask[maskWord])  & genome[i]; //- make the id mask of the recipent genome in the position of the transfer
                 maskWord++;
+                //qDebug() << "Transformed";
             }
         }
         if (simulationManager->variableHgtIdSystem->tryTransform(genome, homologyMask, donorMask)) transform(genome, positionMask, donorMask); //- if within max difference then transform the recipient genome
@@ -119,7 +120,9 @@ void HgtSystem::transform(quint32* genome, quint32* positionMask, quint32* donor
     {
         if (returnGenomeWordInUse(i) && (maskWord<returnUseGenomeWordsCount()))
         {
+            quint32 test = genome[i];
             genome[i] = (genome[i] & positionMask[maskWord])|donorMask[maskWord];
+            //qDebug() << simulationManager->printGenome(test) << simulationManager->printGenome(positionMask[maskWord]) << simulationManager->printGenome(donorMask[maskWord]) << simulationManager->printGenome(genome[i]);
             maskWord++;
         }
     }

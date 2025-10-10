@@ -893,7 +893,8 @@ QString LogSimulation::writeVariableHgtProbHeader()
     for (int i = 0; i < 32; i++)
     {
         quint32 n = simulationManager->variableHgtProbSystem->returnCumulativeDistributionAtN(i);
-        if (csvOutput) out << i << "," << "1/" <<  n << "\n";
+
+        if (csvOutput) out << i << "," << n << " out of 1000" << "\n";
         else out << i << "\t" << "1/" <<  n << "\n";
 
     }

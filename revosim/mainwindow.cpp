@@ -938,6 +938,11 @@ QDockWidget *MainWindow::createInteractionSettingsDock()
     transferchanceSpin->setMaximum(10000000);
     interactionSettingsGrid->addWidget(transfer_chance_label, 20, 1);
     interactionSettingsGrid->addWidget(transferchanceSpin, 20, 2);
+    connect(transferchanceSpin, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), [ = ](const int &i)
+    {
+        simulationManager->cellSettingsMaster-> hgtTransferChance = i;
+    });
+
 
     variablehgtlenCheckbox = new QCheckBox("Variable length");
     variablehgtlenCheckbox->setChecked(simulationManager->simulationSettings->variableHgtLen);
@@ -1066,15 +1071,8 @@ QDockWidget *MainWindow::createInteractionSettingsDock()
     });
 
 
-
-
-    // PG- to add in when functions sorted, currently only non-Synonoymous works.
     QLabel *hgt_mode_label = new QLabel("Transformation placement:");
     interactionSettingsGrid->addWidget(hgt_mode_label, 26, 1, 1, 2);
-    connect(transferchanceSpin, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), [ = ](const int &i)
-    {
-        simulationManager->cellSettingsMaster-> hgtTransferChance = i;
-    });
     hgtSynonoymousRadio = new QRadioButton("Same position");
     hgtSynonoymousRadio->setToolTip("<font>Transfer segment placed in recipent at same location as donor genome.</font>");
     hgtNonSynonoymousRadio = new QRadioButton("Shifted position");
@@ -1912,7 +1910,7 @@ QScrollArea *MainWindow::createWordsScrollArea()
             hgt_word_label_1->changeColourTimer(Qt::darkGreen, 1000);
             wordsInUse.insert("Hgtprobability", s);
         }
-        qDebug()<<simulationManager->variableHgtProbSystem->returnGenomeWordInUseString();
+        //qDebug()<<simulationManager->variableHgtProbSystem->returnGenomeWordInUseString();
     });
 
     SysLabel *hgt_word_label_2 = new SysLabel("Variable HGT Transfer Length: ");
@@ -2790,9 +2788,11 @@ void MainWindow::closeEvent(QCloseEvent *e)
 void MainWindow::report()
 {
     if (simulationManager->aliveCount == 0) return;
-    if (--nextRefresh > 0) return;
+    if (--nextRefresh > 0 && simulationManager->iteration != 0) return;
 
-    nextRefresh = refreshRate;
+    if (simulationManager->iteration != 0){
+        nextRefresh = refreshRate;
+    }
 
     QString s;
     QTextStream sout(&s);
@@ -5004,6 +5004,28 @@ void MainWindow::loadSettings(QString fileName, bool calledFromCommandLine)
             if (settingsFileIn.name().toString() == "logTextEdit")
                 simulationManager->simulationLog->setSpeciestTextFromGUI(settingsFileIn.readElementText());
 
+            //HGT settings
+            if (settingsFileIn.name().toString() == "hgtTransform")
+                simulationManager->cellSettingsMaster->hgtTransform = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "variableHgtProb")
+                simulationManager->simulationSettings->variableHgtProb = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "hgtTransferChance")
+                simulationManager->cellSettingsMaster->hgtTransferChance = settingsFileIn.readElementText().toInt();
+            if (settingsFileIn.name().toString() == "variableHgtLen")
+                simulationManager->simulationSettings->variableHgtLen = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "hgtrandomlength")
+                simulationManager->simulationSettings->hgtrandomlength = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "hgtTransferLength")
+                simulationManager->cellSettingsMaster->hgtTransferLength = settingsFileIn.readElementText().toInt();
+            if (settingsFileIn.name().toString() == "variableHgtId")
+                simulationManager->simulationSettings->variableHgtId = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "hgtId")
+                simulationManager->simulationSettings->hgtId = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "maxDifferenceHgt")
+                simulationManager->simulationSettings->maxDifferenceHgt = settingsFileIn.readElementText().toInt();
+            if (settingsFileIn.name().toString() == "hgtMode")
+                simulationManager->simulationSettings->hgtMode = settingsFileIn.readElementText().toInt();
+
             for (auto &s : simulationManager->systemsList)
                 if (settingsFileIn.name().toString() == s->returnName().replace(" ", "_"))
                     s->setGenomeWordsFromString(settingsFileIn.readElementText(), simulationManager->simulationSettings->genomeSize);
@@ -5087,6 +5109,20 @@ void MainWindow::updateGUIFromVariables()
     iterationTextEdit->setHtml(simulationManager->simulationLog->printLogIterationText());
     logTextEdit->setHtml(simulationManager->simulationLog->printLogSpeciesText());
 
+    //HGT settings
+    variablehgtprobCheckbox->setChecked(simulationManager->simulationSettings->variableHgtProb);
+    hgtCheckbox->setChecked(simulationManager->cellSettingsMaster->hgtTransform);
+    transferchanceSpin->setValue(simulationManager->cellSettingsMaster-> hgtTransferChance);
+    variablehgtlenCheckbox->setChecked(simulationManager->simulationSettings->variableHgtLen);
+    randomlengthCheckbox->setChecked(simulationManager->simulationSettings->hgtrandomlength);
+    transferlengthSpin->setValue(simulationManager->cellSettingsMaster->hgtTransferLength);
+    variablehgtidCheckbox->setChecked(simulationManager->simulationSettings->variableHgtId);
+    hgtidCheckbox->setChecked(simulationManager->simulationSettings->hgtId);
+    transfermaxdifferenceSpin->setValue(simulationManager->simulationSettings->maxDifferenceHgt);
+    if (simulationManager->simulationSettings->hgtMode == HGT_SYNOYMOUS) hgtSynonoymousRadio->setChecked(true);
+    else hgtNonSynonoymousRadio->setChecked(true);
+
+
     fitness_word_edit->setText(simulationManager->environmentalFitnessSytem->returnGenomeWordInUseString());
     breed_word_edit->setText(simulationManager->breedSystem->returnGenomeWordInUseString());
     mutate_word_edit->setText(simulationManager->mutationSystem->returnGenomeWordInUseString());
@@ -5097,6 +5133,10 @@ void MainWindow::updateGUIFromVariables()
     interactions_word_edit->setText(simulationManager->interactionSystem->returnGenomeWordInUseString());
     visualisations_word_edit->setText(simulationManager->visualisationSystem->returnGenomeWordInUseString());
     visualisations_word_edit_2->setText(simulationManager->visualisationSystem2->returnGenomeWordInUseString());
+    hgt_word_edit_1->setText(simulationManager->hgtSystem->returnGenomeWordInUseString());
+    variable_hgt_word_edit_1->setText(simulationManager->variableHgtProbSystem->returnGenomeWordInUseString());
+    variable_hgt_word_edit_2->setText(simulationManager->variableHgtLenSystem->returnGenomeWordInUseString());
+    variable_hgt_word_edit_3->setText(simulationManager->variableHgtIdSystem->returnGenomeWordInUseString());
 }
 
 /*!
@@ -5382,6 +5422,51 @@ void MainWindow::saveSettings(QString fileName)
     settingsFileOut.writeStartElement("predationRestriction");
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->predationRestriction));
     settingsFileOut.writeEndElement();
+
+    //HGT settings
+
+    settingsFileOut.writeStartElement("hgtTransform");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->cellSettingsMaster->hgtTransform));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("variableHgtProb");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->variableHgtProb));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("hgtTransferChance");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->cellSettingsMaster-> hgtTransferChance));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("variableHgtLen");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->variableHgtLen));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("hgtrandomlength");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->hgtrandomlength));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("hgtTransferLength");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->cellSettingsMaster->hgtTransferLength));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("variableHgtId");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->variableHgtId));
+    settingsFileOut.writeEndElement();
+
+
+    settingsFileOut.writeStartElement("hgtId");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->hgtId));
+    settingsFileOut.writeEndElement();
+
+
+    settingsFileOut.writeStartElement("maxDifferenceHgt");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->maxDifferenceHgt));
+    settingsFileOut.writeEndElement();
+
+    settingsFileOut.writeStartElement("hgtMode");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->hgtMode));
+    settingsFileOut.writeEndElement();
+
 
     //Strings
     settingsFileOut.writeStartElement("globalSavePath");

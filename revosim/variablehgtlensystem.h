@@ -22,4 +22,4 @@ private:
     QVector <quint32> cumulativeDistribution;  
 };
 
-#endif // VARIABLEHGTSYSTEM_H
+#endif // VARIABLEHGTLENSYSTEM_H

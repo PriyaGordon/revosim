@@ -162,16 +162,19 @@ SimManager::SimManager()
     systemsList.append(genomeComparisonSystem);
 
     hgtSystem = new HgtSystem();
+    hgtSystem->setName("HGT System");
     hgtSystem->setGenomeWordsFromString("01", MAX_GENOME_WORDS);
     systemsList.append(hgtSystem);
 
     variableHgtProbSystem = new VariableHgtProbSystem();
     variableHgtProbSystem->setGenomeWordsFromString("1", MAX_GENOME_WORDS);
+    variableHgtProbSystem->setName("Variable HGT Prob System");
     systemsList.append(variableHgtProbSystem);
 
     variableHgtLenSystem = new VariableHgtLenSystem();
     variableHgtLenSystem->transformableGenomeSize = hgtSystem->returnUseGenomeWordsCount();
     variableHgtLenSystem->setGenomeWordsFromString("0", MAX_GENOME_WORDS);
+    variableHgtLenSystem->setName("Variable HGT Len System");
     systemsList.append(variableHgtLenSystem);
 
     variableHgtIdSystem = new VariableHgtIdSystem();

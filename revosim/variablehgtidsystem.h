@@ -20,4 +20,4 @@ private:
     QVector <quint32> linearDistribution;
 };
 
-#endif // VARIABLEHGTSYSTEM_H
+#endif // VARIABLEHGTIDSYSTEM_H

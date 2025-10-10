@@ -35,15 +35,11 @@ bool VariableHgtProbSystem::variableWillTransform(const quint32 *genome)
         return false;
     }
 
-    // CHANGE BACK FOR NON LINEAR DISTRIBUTION
-    // //generate random number between 1 and value from cumlative distribution, return true if number is 1
-    // quint64 number = (simulationManager->simulationRandoms->rand64() % cumulativeDistribution[bitcount]);
-    // return (number == 1);
+    //generate random number between 1 and value from cumlative distribution, return true if number is 1
+    quint64 number = (simulationManager->simulationRandoms->rand64() % cumulativeDistribution[bitcount]);
+    return (number == 1);
 
-    //bodge for linear distribution
-    quint64 number = (simulationManager->simulationRandoms->rand64() % 1000);
-    return (number <= cumulativeDistribution[bitcount]);
-    // qDebug() << cumulativeDistribution;
+    qDebug() << cumulativeDistribution;
 }
 
 
@@ -51,37 +47,21 @@ bool VariableHgtProbSystem::variableWillTransform(const quint32 *genome)
 void VariableHgtProbSystem::createCumulativeLogLinearDistribution()
 {
 
-    // cumulativeDistribution.clear();
+    cumulativeDistribution.clear();
 
-    // quint64 max = 1e3;
-    // quint64 min = 1e1;
-    // double step = (log10(max) - log10(min)) / ((useGenomeWordsCount* 32) - 1);
+    quint64 max = 1e3;
+    quint64 min = 1e1;
+    double step = (log10(max) - log10(min)) / ((useGenomeWordsCount* 32) - 1);
 
-    // for (int i = 0; i < useGenomeWordsCount * 32; i++)
-    // {
-    //     double LogValue = log10(max) - (step * i);
-    //     double value = std::pow(10, LogValue);
-
-
-    //     cumulativeDistribution.append(static_cast<quint64>(value));
-    // }
-    // //qDebug() << cumulativeDistribution;
-    double min = 1.0 / 500.0;
-    double max = 1.0 / 2.0;
-    int steps = useGenomeWordsCount * 32;
+    for (int i = 0; i < useGenomeWordsCount * 32; i++)
+    {
+        double LogValue = log10(max) - (step * i);
+        double value = std::pow(10, LogValue);
 
 
-    quint64 scale = 1000;
-
-    double step = (max - min) / (steps - 1);
-
-    for (int i = 0; i < steps; i++) {
-        double value = min + step * i;
-        quint64 scaledValue = static_cast<quint64>(value * scale);
-        cumulativeDistribution.append(scaledValue);
+        cumulativeDistribution.append(static_cast<quint64>(value));
     }
-
-    qDebug() << cumulativeDistribution;
+    //qDebug() << cumulativeDistribution;
 }
 
 

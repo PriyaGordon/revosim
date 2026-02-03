@@ -5251,11 +5251,6 @@ void MainWindow::updateGenomeComparisonDockVisibility(bool checked)
     genomeComparisonButton->setChecked(checked);
 }
 
-void MainWindow::processAppEvents()
-{
-    qApp->processEvents();
-}
-
 bool MainWindow::boolStringToBool(QString s)
 {
     if (s == "1") return true;

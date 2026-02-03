@@ -69,7 +69,6 @@ public:
     void createMainToolbar();
     void createMainMenu();
     void updateGUIFromVariables();
-    void processAppEvents();
     bool genomeComparisonAdd();
     float timePerFrame();
 

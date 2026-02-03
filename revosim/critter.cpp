@@ -63,21 +63,21 @@ void Critter::initialise(quint32 *multiwordGenome, quint8 *environment, int x, i
     for (int i = 0; i < MAX_GENOME_WORDS; i++)genomeWords[i] = 0;
     for (int i = 0; i < simulationManager->simulationSettings->genomeSize; i++) genomeWords[i] = multiwordGenome[i];
 
-    age = simulationManager->cellSettings[x][y].startAge;
+    xPosition = x;
+    yPosition = y;
+    zPosition = z;
+
+    settings = &(simulationManager->cellSettings[xPosition][yPosition]);
+
+    age = settings->startAge;
 
     //RJG - start with 0 energy
     energy = 0;
     stolenEnergy = 0;
     lifetimeEnergy = 0;
 
-    settings = &(simulationManager->cellSettings[xPosition][yPosition]);
-
     //RJG - Work out fitness
     calculateFitness(environment);
-
-    xPosition = x;
-    yPosition = y;
-    zPosition = z;
 
     speciesID = species;
     trophicLevel = trophic / 100;
@@ -232,23 +232,6 @@ int Critter::breedWithParallel(Critter *partner, int *newGenomeCountLocal)
     if (settings->breedDifference)
     {
         breedsuccess2 = simulationManager->breedSystem->tryBreed(genomeWords, partner->genomeWords, simulationManager->simulationSettings->maxDifference);
-        /*
-        int t1 = 0;
-        // - determine success.. use genetic similarity
-        quint64 cg1x = genome ^ partner->genome; //XOR the two to compare
-
-        //Coding half
-        auto g1xl = quint32(cg1x & ((quint64)65536 * (quint64)65536 - (quint64)1)); //lower 32 bits
-        t1 = bitCounts[g1xl / (quint32)65536] +  bitCounts[g1xl & (quint32)65535];
-
-        //non-Coding half
-        auto g1xu = quint32(cg1x / ((quint64)65536 * (quint64)65536)); //upper 32 bits
-        t1 += bitCounts[g1xu / (quint32)65536] +  bitCounts[g1xu & (quint32)65535];
-        if (t1 > simulationManager->simulationSettings->maxDifference)
-        {
-            breedsuccess2 = false;
-        }
-        */
     }
 
     if (breedsuccess1 && breedsuccess2)

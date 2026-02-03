@@ -838,7 +838,7 @@ int SimManager::iterateParallel(int firstx, int lastx, int newGenomeCountLocal, 
                                 else
                                 {
                                     // ----RJG: this returns one (or potentially more) if breeding has failed
-                                    if (crit[breedlist[p][c]].breedWithParallel(n, m, &(crit[breedlist[p][partner]]), &newGenomeCountLocal)) breedFails[n][m]++; //for analysis purposes
+                                    if (crit[breedlist[p][c]].breedWithParallel(&(crit[breedlist[p][partner]]), &newGenomeCountLocal)) breedFails[n][m]++; //for analysis purposes
                                     else  //----RJG: or zero if breeding was a success
                                     {
                                         breedSuccess[n][m]++;
@@ -911,7 +911,7 @@ int SimManager::iterateParallel(int firstx, int lastx, int newGenomeCountLocal, 
                             else
                             {
                                 // ----RJG: this returns one (or potentially more) if breeding has failed
-                                if (crit[breedlist[0][c]].breedWithParallel(n, m, &(crit[breedlist[0][partner]]), &newGenomeCountLocal)) breedFails[n][m]++; //for analysis purposes
+                                if (crit[breedlist[0][c]].breedWithParallel(&(crit[breedlist[0][partner]]), &newGenomeCountLocal)) breedFails[n][m]++; //for analysis purposes
                                 else //----RJG: or zero if breeding was a success
                                 {
                                     breedSuccess[n][m]++; //RJG - This keeps track of how many successes there are at breeding, obviously

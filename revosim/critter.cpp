@@ -218,7 +218,7 @@ past:
  * newGenomeCountLocal is position in genome array - arranged so can never overlap
  * returns 1 if it fails (so I can count fails)
  */
-int Critter::breedWithParallel(int xPosition, int yPosition, Critter *partner, int *newGenomeCountLocal)
+int Critter::breedWithParallel(Critter *partner, int *newGenomeCountLocal)
 {
     bool breedsuccess1 = true; //for species restricted breeding
     bool breedsuccess2 = true; //for difference breeding

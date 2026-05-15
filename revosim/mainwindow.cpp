@@ -995,6 +995,7 @@ QDockWidget *MainWindow::createInteractionSettingsDock()
     {
         if (i > (simulationManager->hgtSystem->returnUseGenomeWordsCount() *32))
         {
+            qDebug() << simulationManager->hgtSystem->returnUseGenomeWordsCount() *32;
             transferlengthSpin->clear();
         }
     });

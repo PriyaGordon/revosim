@@ -805,6 +805,18 @@ bool test::testEight(QString &outString)
 
     out << "\n Settings: \n Genome transfer length = 10 \n HGT mode = Synonoumous\n Transformable genome words ='02' \n";
 
+    //- distribution check for chapter 3
+    // simulationManager ->variableHgtProbSystem->setGenomeWordsFromString("1", MAX_GENOME_WORDS) ;
+    // //- all ones in word determining probability
+    // //quint32 distributionGenome[3] = {simulationManager->simulationRandoms->rand32(), 4294967295, simulationManager->simulationRandoms->rand32()};
+    // quint32 distributionGenome[3] = {simulationManager->simulationRandoms->rand32(), 0, simulationManager->simulationRandoms->rand32()};
+    // for (int i = 0; i < simulationManager->simulationSettings->genomeSize; i++)
+    // {
+    //     out << "<font face='Courier New' size='6' color='white'><b>\n Recipent genome["<< i <<"]:---------------" << simulationManager->printGenome(distributionGenome[i])<< "</font><br>";
+    // }
+    // simulationManager ->variableHgtProbSystem->variableWillTransform(distributionGenome);
+
+
     for (int i = 0; i < 5; i++)
     {
         out << "\n\n" << i << "\n";
@@ -887,8 +899,6 @@ bool test::testEight(QString &outString)
         if (testFlag) out << "Transfer segement matches donor genome sequence... \n";
 
         // Test 3 - Apply the transformation and check if the recipient genome matches the donor in the transfer position
-        out << "<font face='Courier New' size='6' color='white'><b>\n mask test["<< 0 <<"]:---------------" << simulationManager->printGenome(mask[0])<< "</font><br>";
-
         simulationManager->hgtSystem->transformRecipient(recipentGenome, mask, maskofdonor);
 
             position = 0;
@@ -939,7 +949,7 @@ bool test::testEight(QString &outString)
 
    //Test 4 - Checking the max difference id works with new genome
 
-   out << "\n checking the ID system works \n Settings: \n HGT mode = Synonoumous\n Transformable genome words ='0' \n max difference to transform = 2 \n";
+   out << "\n Checking the ID system works \n Settings: \n HGT mode = Synonoumous\n Transformable genome word = 0 \n max difference to transform = 2 \n";
 
    //set settings for hgt transfer test
    simulationManager->simulationSettings->hgtId = true;
@@ -988,9 +998,7 @@ bool test::testEight(QString &outString)
        testFlag = false;
    }
 
-
-
-   //- need to add tests variable prob, length and id matching
+   //-Add test for variable length
 
     if (testFlag) out << "\n Tests passed.\n\n";
     return testFlag;

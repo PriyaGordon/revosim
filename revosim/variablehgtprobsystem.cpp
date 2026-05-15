@@ -11,8 +11,8 @@ VariableHgtProbSystem::VariableHgtProbSystem() : System("Variable HGT System")
 bool VariableHgtProbSystem::setGenomeWordsFromString(QString s, int maxsize)
 {
     bool returnValue = System::setGenomeWordsFromString(s, maxsize);
-    if (returnValue) createCumulativeLogLinearDistribution();
-    //if (returnValue) createCumulativeLinearDistribution();
+    //if (returnValue) createCumulativeLogLinearDistribution();
+    if (returnValue) createCumulativeLinearDistribution();
     return returnValue;
 }
 
@@ -35,11 +35,12 @@ bool VariableHgtProbSystem::variableWillTransform(const quint32 *genome)
         return false;
     }
 
+    //qDebug() << cumulativeDistribution[bitcount];
     //generate random number between 1 and value from cumlative distribution, return true if number is 1
     quint64 number = (simulationManager->simulationRandoms->rand64() % cumulativeDistribution[bitcount]);
     return (number == 1);
 
-    qDebug() << cumulativeDistribution;
+    //qDebug() << cumulativeDistribution;
 }
 
 
@@ -52,6 +53,9 @@ void VariableHgtProbSystem::createCumulativeLogLinearDistribution()
     quint64 max = 1e3;
     quint64 min = 1e1;
     double step = (log10(max) - log10(min)) / ((useGenomeWordsCount* 32) - 1);
+
+    //- 0 at the beginning because the are 33 possible bitcounts
+    cumulativeDistribution.append(0);
 
     for (int i = 0; i < useGenomeWordsCount * 32; i++)
     {
@@ -68,18 +72,41 @@ void VariableHgtProbSystem::createCumulativeLogLinearDistribution()
 //PG - create log linear (semi-log) distribution between 10^-1 and 10^-3 chance for bit count
 void VariableHgtProbSystem::createCumulativeLinearDistribution()
 {
+    // cumulativeDistribution.clear();
+    // quint64 max = 500;
+    // quint64 min = 2;
+    // int steps = useGenomeWordsCount * 32;
+
+    // quint64 step = (max - min) /(steps-1);
+
+    // //- 0 at the beginning because the are 33 possible bitcounts
+    // cumulativeDistribution.append(0);
+
+    // for (int i = 0; i < steps; i++) {
+    //     cumulativeDistribution.append(min + (step * i));
+    // }
+    // qDebug() << cumulativeDistribution;
+
     cumulativeDistribution.clear();
 
-        quint64 max = 500;
-        quint64 min = 2;
-        int steps = useGenomeWordsCount * 32;
+    double max = 500.0;
+    double min = 2.0;
 
-        quint64 step = (max - min) /(steps-1) ;
+    //- number of bits + 1 possible outcomes
+    int steps = (useGenomeWordsCount * 32) + 1;
 
-        for (int i = 0; i < steps; i++) {
-            cumulativeDistribution.append(min + (step * i));
-        }
-        //qDebug() << cumulativeDistribution;
+    for (int i = 0; i < steps; ++i) {
+
+        //- get normalised multiplier by dividing by number of bits
+        double normalised = double(i) / double(steps - 1);
+        //- scale with multiplier, starting at 2 not 0 to allow the modulus function later
+        double value = min + normalised * double(max - min);
+        //- append rounded quint64 for the randomised number
+        cumulativeDistribution.append(quint64(std::round(value)));
+    }
+    // qDebug() << cumulativeDistribution;
+
+
 }
 
 //PG - stolen for logging

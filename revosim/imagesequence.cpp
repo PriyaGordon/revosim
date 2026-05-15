@@ -11,6 +11,14 @@ ImageSequence::ImageSequence(QStringList files, int rate)
     changeCounter = rate;
     changeForward = true;
     loadFromFile(simulationManager->simulationSettings->environmentMode);
+
+    burnInImage = QImage(simulationManager->simulationSettings->gridX, simulationManager->simulationSettings->gridY, QImage::Format_RGB32);
+    for (int i = 0; i < simulationManager->simulationSettings->gridX; i++)
+        for (int j = 0; j < simulationManager->simulationSettings->gridY; j++)
+        {
+            QColor randomColour(QRandomGenerator::global()->bounded(256), QRandomGenerator::global()->bounded(256), QRandomGenerator::global()->bounded(256));
+            burnInImage.setPixelColor(i, j, randomColour);
+        }
 }
 
 /*!
@@ -22,11 +30,10 @@ void ImageSequence::loadFromFile(int eMode)
 {
     //Use make qimage from file method
     //Load the image
-    if (currentFile >= fileList.count())
-    {
-        return;
-    }
-    QImage loadImage(fileList[currentFile]);
+    QImage loadImage;
+    if (currentFile >= fileList.count()) return;
+    else if (currentFile < 0 ) loadImage = burnInImage;
+    else loadImage = QImage(fileList[currentFile]);
 
     if (loadImage.isNull())
     {
@@ -62,7 +69,7 @@ void ImageSequence::loadFromFile(int eMode)
         }
 
     //set up environment next - depends on eMode
-    if (eMode == 0 || fileList.count() == 1)   //static environment
+    if (eMode == ENV_MODE_STATIC || fileList.count() == 1)   //static environment
     {
         for (int i = 0; i < simulationManager->simulationSettings->gridX; i++)
             for (int j = 0; j < simulationManager->simulationSettings->gridY; j++)
@@ -84,12 +91,12 @@ void ImageSequence::loadFromFile(int eMode)
             else
             {
                 //depends on eMode
-                if (eMode == 1) nextfile = currentFile; //won't matter
-                if (eMode == 2) nextfile = 0; //loop mode
-                if (eMode == 3) nextfile = currentFile - 1; //bounce mode
+                if (eMode == ENV_MODE_ONCE) nextfile = currentFile; //won't matter
+                if (eMode == ENV_MODE_LOOP) nextfile = 0; //loop mode
+                if (eMode == ENV_MODE_BOUNCE) nextfile = currentFile - 1; //bounce mode
             }
         }
-        else     //backwards - simpler, must be eMode 3
+        else     //backwards - simpler, must be eMode ENV_MODE_BOUNCE
         {
             if (currentFile > 0) //not yet at end
                 nextfile = currentFile - 1;
@@ -97,7 +104,10 @@ void ImageSequence::loadFromFile(int eMode)
                 nextfile = 1; //bounce mode
         }
 
-        QImage loadImage2(fileList[nextfile]);
+        QImage loadImage2;
+        if (nextfile < 0 ) loadImage2 = burnInImage;
+        else loadImage2 = QImage(fileList[nextfile]);
+
         if (xsize < simulationManager->simulationSettings->gridX || ysize < simulationManager->simulationSettings->gridY) //rescale if necessary - only if too small
             loadImage2 = loadImage2.scaled(QSize(simulationManager->simulationSettings->gridX, simulationManager->simulationSettings->gridY), Qt::IgnoreAspectRatio);
         //Get it
@@ -121,8 +131,8 @@ void ImageSequence::loadFromFile(int eMode)
 bool ImageSequence::regenerate(int eMode, bool interpolate)
 //returns true if finished sim
 {
-    //RJG - constant environment - either static in menu, or 0 environment change rate, or only one file
-    if (changeRate == 0 || eMode == 0 || fileList.count() == 1) return false;
+    //RJG - constant environment - either static in menu, or 0 environment change rate
+    if (changeRate == 0 || (eMode == ENV_MODE_STATIC && currentFile == 0)) return false;
 
     --changeCounter;
 
@@ -130,16 +140,16 @@ bool ImageSequence::regenerate(int eMode, bool interpolate)
     if (changeCounter <= 0)
     {
         //should not be going backwards!
-        if (eMode != 3 && !changeForward) changeForward = true;
+        if (eMode != ENV_MODE_BOUNCE && !changeForward) changeForward = true;
 
         if (changeForward)
         {
             currentFile++; //next image
             if (currentFile >= fileList.count())
             {
-                if (eMode == 1) return true; //no more files and we are in 'once' mode - stop the sim
-                if (eMode == 2) currentFile = 0; //loop mode
-                if (eMode == 3)
+                if (eMode == ENV_MODE_ONCE) return true; //no more files and we are in 'once' mode - stop the sim
+                if (eMode == ENV_MODE_LOOP) currentFile = 0; //loop mode
+                if (eMode == ENV_MODE_BOUNCE)
                 {
                     currentFile -= 2; //bounce mode - back two to undo the extra ++
                     changeForward = false;
@@ -263,6 +273,7 @@ QStringList ImageSequence::returnFileList()
 void ImageSequence::setCurrentFileNumber(int n)
 {
     currentFile = n;
+
 }
 
 /*!

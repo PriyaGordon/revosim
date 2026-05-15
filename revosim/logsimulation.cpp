@@ -41,6 +41,8 @@ void LogSimulation::CreateReplacementText()
     replacementText.insert("*printSettings*", "*printSettings*");
     replacementText.insert("*printTime*", "*printTime*");
     replacementText.insert("*dumpGenomes*", "Genome_dump");
+    replacementText.insert("*dumpSpecies*", "Species_dump");
+
     replacementText.insert("*gridSpeciesRange*", "Grid_species_range");
     QStringList frequenciesHeaders;
     for (int ii = 0; ii < simSettings->genomeSize; ii++)
@@ -96,7 +98,7 @@ QString LogSimulation::printDefaultHeaderText()
         out << "-- Species mean environmental (non-interaction) fitness<br />";
         out << "-- Species current modal genome<br />";
         out << "<br />";
-        out << "**Note that this excludes species with less individuals than minimum species size, but is not able to exlude species without descendants, which can only be achieved with the end-run log.**<br /><br />";
+        out << "**Note that this excludes species with less individuals than minimum species size, but is not able to exclude species without descendants, which can only be achieved with the end-run log.**<br /><br />";
         out << "===================<br /><br />";
     }
     return outString;
@@ -170,6 +172,7 @@ QString LogSimulation::printSettings()
         settingsOut << "-- Genome size: " << simSettings->genomeSize << "\n";
         settingsOut << "-- Interaction attempts per organism per iteration: " << cellsettings.interactions << "\n";
         settingsOut << "-- Cropping rate: " << cellsettings.croppingFrequency << "\n";
+        settingsOut << "-- Species burn in duration: " << simSettings->speciesBurnInDuration << "\n";
 
         settingsOut << "\n- Bools:\n";
         settingsOut << "-- Recalculate fitness: " << simSettings->recalculateFitness << "\n";
@@ -187,16 +190,13 @@ QString LogSimulation::printSettings()
         settingsOut << "-- Interactions change energy: " << cellsettings.interactEnergy << "\n";
         settingsOut << "-- Multiple breed lists: " << cellsettings.multiBreedList << "\n";
         settingsOut << "-- Random reseed before genetic: " << simSettings->randomReseedBeforeGenetic << "\n";
+        settingsOut << "-- Species burnin: "  << simSettings->speciesBurnIn << "\n";
 
         settingsOut << "-- Breeding: ";
-        if (cellsettings.obligateSexual)
-            settingsOut << "obligate sexual" << "\n";
-        else if (cellsettings.facultativeSexual)
-            settingsOut << "facultative sexual" << "\n";
-        else if (cellsettings.asexual)
-            settingsOut << "asexual" << "\n";
-        else
-            settingsOut << "variable" << "\n";
+        if (cellsettings.obligateSexual) settingsOut << "obligate sexual" << "\n";
+        else if (cellsettings.facultativeSexual) settingsOut << "facultative sexual" << "\n";
+        else if (cellsettings.asexual) settingsOut << "asexual" << "\n";
+        else settingsOut << "variable" << "\n";
 
         settingsOut << "-- Pathogen mopde: ";
         if (simulationManager->simulationSettings->pathogenMode == PATH_MODE_DRIFT) settingsOut << "Drift\n";
@@ -291,7 +291,8 @@ QString LogSimulation::printSettings()
         settingsOut << "Multiple breed lists,";
         settingsOut << "Random reseed before genetic,";
         settingsOut << "Breeding,";
-        settingsOut << "Pathogen mopde: " << "\n";
+        settingsOut << "Pathogen mode, ";
+        settingsOut << "Species burnin, " << "\n";
 
         settingsOut << simSettings->recalculateFitness << ",";
         settingsOut << cellsettings.noSelection << ",";
@@ -314,8 +315,10 @@ QString LogSimulation::printSettings()
         else if (cellsettings.asexual) settingsOut << "asexual" << ",";
         else settingsOut << "variable" << ",";
 
-        if (simulationManager->simulationSettings->pathogenMode == PATH_MODE_DRIFT) settingsOut << "Drift\n";
-        else settingsOut << "Evolve\n";
+        if (simulationManager->simulationSettings->pathogenMode == PATH_MODE_DRIFT) settingsOut << "Drift,";
+        else settingsOut << "Evolve,";
+
+        settingsOut << simSettings->speciesBurnIn << "\n";
 
         settingsOut << "Systems\n";
         for (auto &s : simulationManager->systemsList) settingsOut << s->returnName() << ",";
@@ -444,7 +447,6 @@ void LogSimulation::writeRunData(QString globalSavePath, int batchRuns)
     outputfile.close();
 }
 
-
 //RJG - per species level outputs
 QString LogSimulation::processLogTextSpecies(QString text)
 {
@@ -536,6 +538,7 @@ QString LogSimulation::processLogTextGeneral(QString text)
     QDateTime t(QDateTime::currentDateTime());
     text.replace("*printTime*", t.toString(Qt::ISODate));
     text.replace("*dumpGenomes*", writeDisparityLog());
+    text.replace("*dumpSpecies*", writeGridSpecies());
 
     if (text.contains("*gridSpeciesRange*"))
     {
@@ -641,7 +644,7 @@ QString LogSimulation::processLogTextGeneral(QString text)
 
 }
 
-void LogSimulation::writeLog(QString globalSavePath, int batchRuns, int logType)
+void LogSimulation::writeLog(QString globalSavePath, int batchRuns, int logType, int iteration)
 {
     QString loggingFile = globalSavePath;
     if (!loggingFile.endsWith(QDir::separator())) loggingFile.append(QDir::separator());
@@ -657,6 +660,7 @@ void LogSimulation::writeLog(QString globalSavePath, int batchRuns, int logType)
     if (logType == LOG_DUMP_INDIVIDUALS) loggingFile.append(QString(PRODUCTNAME) + "_individuals_data");
 
     if (batchRuns > -1) loggingFile.append(QString("_run_%1").arg(batchRuns, 4, 10, QChar('0')));
+    if (iteration > -1) loggingFile.append(QString("_iteration_%1").arg(iteration, 4, 10, QChar('0')));
     loggingFile.append(".txt");
 
     QFile outputFile(loggingFile);
@@ -927,9 +931,10 @@ QString LogSimulation::writeFitnessLog()
     QString logString;
     QTextStream out(&logString);
 
-    int gridNumberAlive = 0;
+    //These are useful in various different formulations of this log
+    /*int gridNumberAlive = 0;
     int gridTotalFitness = 0;
-    int gridBreedEntries = 0;
+    int gridBreedEntries = 0;*/
 
     for (int i = 0; i < simulationManager->simulationSettings->gridX; i++)
     {
@@ -949,7 +954,7 @@ QString LogSimulation::writeFitnessLog()
             // mean = static_cast<float>(totalFitness[i][j])/static_cast<float>(maxUsed[i][j])+1;
 
             //----RJG: Manually calculate total fitness for grid
-            gridTotalFitness += totalFitness[i][j];
+            //gridTotalFitness += totalFitness[i][j];
 
             int critters_alive = 0;
 
@@ -957,8 +962,7 @@ QString LogSimulation::writeFitnessLog()
             for (int k = 0; k < simulationManager->cellSettingsMaster->slotsPerSquare; k++)
                 if (critters[i][j][k].age > 0)
                 {
-                    //numberalive++;
-                    gridNumberAlive++;
+                    //gridNumberAlive++;
                     critters_alive++;
                 }
 
@@ -966,11 +970,10 @@ QString LogSimulation::writeFitnessLog()
             out << totalFitness[i][j] << " " << critters_alive << " " << breedAttempts[i][j];
 
             //----RJG: Manually count breed attempts for grid
-            gridBreedEntries += breedAttempts[i][j];
+            //gridBreedEntries += breedAttempts[i][j];
 
             out << "\n";
         }
-
     }
     return logString;
 }
@@ -1039,6 +1042,22 @@ QString LogSimulation::writeDisparityLog(bool fullDetails)
                     out << "\n";
                 }
 
+    return logString;
+}
+
+QString LogSimulation::writeGridSpecies()
+{
+    QString logString;
+    QTextStream out(&logString);
+
+    for (int i = 0; i < simulationManager->simulationSettings->gridX; i++)
+        for (int j = 0; j < simulationManager->simulationSettings->gridY; j++)
+        {
+            out << "x" << i << ",y" << j;
+            for (int k = 0; k < simulationManager->cellSettingsMaster->slotsPerSquare; k++)
+                if (critters[i][j][k].age > 0) out << "," << critters[i][j][k].speciesID;
+            out << "\n";
+        }
     return logString;
 }
 

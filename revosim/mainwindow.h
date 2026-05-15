@@ -69,7 +69,6 @@ public:
     void createMainToolbar();
     void createMainMenu();
     void updateGUIFromVariables();
-    void processAppEvents();
     bool genomeComparisonAdd();
     float timePerFrame();
 
@@ -163,6 +162,7 @@ private:
     QCheckBox *recalculateFitnessCheckbox{};
     QCheckBox *noSelectionFitnessCheckbox{};
     QCheckBox *toroidalCheckbox{};
+    QCheckBox *burnInCheckbox{};
     QCheckBox *nonspatialCheckbox{};
     QCheckBox *breedDifferenceCheckbox{};
     QCheckBox *breedSpeciesCheckbox{};
@@ -172,6 +172,7 @@ private:
     QCheckBox *variableMutationCheckbox{};
     QCheckBox *excludeWithoutDescendantsCheckbox{};
     QCheckBox *loggingCheckbox{};
+    QCheckBox *appendCheckbox{};
     QCheckBox *autoWriteLogCheckbox{};
     QCheckBox *autoWriteLogIndividualsCheckbox{};
     QCheckBox *hgtCheckbox{};
@@ -224,13 +225,16 @@ private:
     QSpinBox *dispersalSpin{};
     QSpinBox *energySpin{};
     QSpinBox *breedCostSpin{};
-    // Only in development branch (as is variable breed above)
     QSpinBox *pathogenMutateSpin{};
     QSpinBox *pathogenFrequencySpin{};
     QSpinBox *croppingFrequencySpin{};
+<<<<<<< HEAD
     QSpinBox *transferlengthSpin{};
     QSpinBox *transferchanceSpin{};
     QSpinBox *transfermaxdifferenceSpin{};
+=======
+    QSpinBox *speciesBurnInDurationSpin{};
+>>>>>>> master
 
     //RJG - text edits for logs
     QTextEdit *headerTextEdit;

@@ -1272,12 +1272,12 @@ QString AnalysisTools::generateTree(const QString &filename)
         foreach (quint64 ID, magicList)
         {
             //find parent
-            int parent = speciesList[ID].parent;
+            quint64 parent = speciesList[ID].parent;
 
             if (parent > 0)
             {
                 //find parent's line number
-                int pline = magicList.indexOf(parent) * 2;
+                auto pline = magicList.indexOf(parent) * 2;
                 auto xPosition = (int)(((float)speciesList[ID].start) / timescale);
                 if (xPosition > (SCALE - 1)) xPosition = SCALE - 1;
                 output_grid[pline][xPosition] = 2;
@@ -1490,6 +1490,7 @@ QString AnalysisTools::makeNewick(LogSpecies *root)
 {
     ids = 0;
 
+    //Killfluff always true - rules for killing are configurable, so leave it on
     if (root) return root->writeNewickString(0, 0, true);
 
     return "ERROR - NO PHYLOGENY DATA";
@@ -1507,8 +1508,9 @@ QString AnalysisTools::writeData(LogSpecies *root)
 {
     ids = 0;
 
+    //killfluff always turned on - it's configurable, so that's fine
     if (root)
-        return "id,ParentID,iteration,size,sampleGenome,sampleGenome_binary," + LogSpeciesDataItem::headersForSharedOutput() + "\n" + root->writeData(0, 0, true);
+        return "nodeID,revosimID,parentNodeID,iteration,size,sampleGenome,sampleGenome_binary," + LogSpeciesDataItem::headersForSharedOutput() + "\n" + root->writeData(0, 0, true);
     else
         return "ERROR - NO PHYLOGENY DATA";
 }

@@ -33,7 +33,7 @@ public:
     bool iterateParallel(int *killCountLocal, float addFood, int settleTolerance);
     bool operator == (const Critter &c) const;
     int calculateFitness(const quint8 *environment);
-    int breedWithParallel(int xPosition, int yPosition, Critter *partner, int *newGenomeCountLocal);
+    int breedWithParallel(Critter *partner, int *newGenomeCountLocal);
     int returnRecombination();
 
     int xPosition{};

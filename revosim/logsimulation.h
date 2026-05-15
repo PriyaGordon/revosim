@@ -1,7 +1,6 @@
 #ifndef LOGSIMULATION_H
 #define LOGSIMULATION_H
 
-#include "cellsettings.h"
 #include "simsettings.h"
 #include "analyser.h"
 
@@ -24,7 +23,7 @@ public:
     QString writeHeaderFromLogText(QString text);
 
     void writeRunData(QString globalSavePath, int batchRuns);
-    void writeLog(QString globalSavePath, int batchRuns, int logType);
+    void writeLog(QString globalSavePath, int batchRuns, int logType, int iteration = -1);
     void setHeaderTextFromGUI(QString text);
     void setIterationTextFromGUI(QString text);
     void setSpeciestTextFromGUI(QString text);
@@ -60,6 +59,7 @@ private:
     QString writeFitnessLog();
     QString writeRecombinationLog();
     QString writeDisparityLog(bool fullDetails = false);
+    QString writeGridSpecies();
     QString writeSpeciationLog();
     QString writeMutationLog();
     QString writeVariableHgtProbLog();

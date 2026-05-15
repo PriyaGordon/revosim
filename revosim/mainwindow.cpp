@@ -488,6 +488,66 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
         simulationManager->simulationSettings->toroidal = i;
     });
 
+    burnInCheckbox = new QCheckBox("Species burn in");
+    burnInCheckbox ->setChecked(simulationManager->simulationSettings->speciesBurnIn);
+    burnInCheckbox->setToolTip("<font>Turning this ON will run the simulation with a static noise image prior to loading your environment to allow you to reach species equilibrium faster.</font>");
+    environmentSettingsGrid->addWidget(burnInCheckbox, 7, 1, 1, 2);
+    connect(burnInCheckbox, &QCheckBox::stateChanged, [ = ](const bool & i)
+    {
+        if (!autoFromCommand && simulationManager->iteration != 0 && i)
+            if (QMessageBox::question(this, "Warning", "This will reset your simulation. Do you want to continue?",
+                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::No)
+            {
+                burnInCheckbox->setCheckState(Qt::Unchecked);
+                return;
+            }
+            else resetSimulation();
+
+        simulationManager->simulationSettings->speciesBurnIn = i;
+
+        if (i)
+        {
+            simulationManager->env->setCurrentFileNumber(-simulationManager->simulationSettings->speciesBurnInDuration);
+            speciesBurnInDurationSpin->setEnabled(true);
+            speciesBurnInDurationSpin->setValue(simulationManager->simulationSettings->speciesBurnInDuration);
+        }
+        else
+        {
+            simulationManager->env->setCurrentFileNumber(0);
+            speciesBurnInDurationSpin->setEnabled(false);
+        }
+
+        if (simulationManager->iteration == 0)
+        {
+            simulationManager->env->reset(0);
+            simulationManager->env->regenerate(simulationManager->simulationSettings->environmentMode, simulationManager->simulationSettings->environmentInterpolate);
+            resetSimulation();
+        }
+    });
+
+
+    QLabel *speciesBurnInDuration_label = new QLabel("Burn in duration:");
+    speciesBurnInDuration_label->setToolTip("<font>The number of static noise environmental images you would like to prepend to your own image sequence.</font>");
+    speciesBurnInDurationSpin = new QSpinBox;
+    speciesBurnInDurationSpin->setMinimum(1);
+    speciesBurnInDurationSpin->setMaximum(1000);
+    speciesBurnInDurationSpin->setValue(simulationManager->simulationSettings->speciesBurnInDuration);
+    speciesBurnInDurationSpin->setToolTip("<font>the number of static noise environmental images you would like to prepend to your own image sequence.</font>");
+    environmentSettingsGrid->addWidget(speciesBurnInDuration_label, 8, 1, 1, 1);
+    environmentSettingsGrid->addWidget(speciesBurnInDurationSpin, 8, 2, 1, 1);
+    speciesBurnInDurationSpin->setEnabled(false);
+    connect(speciesBurnInDurationSpin, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), mainWindow, [ = ](const int &i)
+    {
+        simulationManager->simulationSettings->speciesBurnInDuration = i;
+        if (simulationManager->simulationSettings->speciesBurnIn)
+        {
+            simulationManager->env->setCurrentFileNumber(-simulationManager->simulationSettings->speciesBurnInDuration);
+            simulationManager->env->reset(0);
+            simulationManager->env->regenerate(simulationManager->simulationSettings->environmentMode, simulationManager->simulationSettings->environmentInterpolate);
+            resetSimulation();
+        }
+    });
+
     // Simulation Size Settings
     auto *simulationSizeSettingsGrid = new QGridLayout;
 
@@ -1990,15 +2050,6 @@ QDockWidget *MainWindow::createLogSettingsDock()
     auto *logSettingsGrid = new QGridLayout;
     logSettingsGrid->setAlignment(Qt::AlignTop);
 
-    loggingCheckbox = new QCheckBox("Write to file");
-    loggingCheckbox->setChecked(simulationManager->simulationSettings->logging);
-    loggingCheckbox->setToolTip("<font>Turn on/off this option to write to a text log file every refresh/poll.</font>");
-    logSettingsGrid->addWidget(loggingCheckbox, 0, 1);
-    connect(loggingCheckbox, &QCheckBox::stateChanged, mainWindow, [ = ](const bool & i)
-    {
-        simulationManager->simulationSettings->logging = i;
-    });
-
     QPushButton *validateButton = new QPushButton("Validate logs");
     validateButton->setToolTip("<font>Click here to validate the logs - possible errors will appear in red.</font>");
     validateButton->setObjectName("validateButton");
@@ -2019,7 +2070,7 @@ QDockWidget *MainWindow::createLogSettingsDock()
     QPushButton *instructionsButton = new QPushButton("Instructions");
     instructionsButton->setObjectName("instructionsButton");
     instructionsButton->setToolTip("<font>Click here for logging instructions.</font>");
-    logSettingsGrid->addWidget(instructionsButton, 0, 2);
+    logSettingsGrid->addWidget(instructionsButton, 0, 1, 1, 2);
     connect(instructionsButton, &QPushButton::clicked, logSettingsDock, [ = ]()
     {
         QString outString;
@@ -2039,7 +2090,7 @@ QDockWidget *MainWindow::createLogSettingsDock()
          //sort the list
          list.sort();
          out << list.join("\n"); //and append with newline separators into the string;*/
-        QMessageBox::information(this, tr("REvoSim - Logging system"), outString, Qt::NonModal);
+        QMessageBox::information(this, tr("REvoSim - Logging system"), outString, QMessageBox::Ok);
     });
 
     QPushButton *commandLineLog = new QPushButton("Command line log file");
@@ -2110,6 +2161,23 @@ QDockWidget *MainWindow::createLogSettingsDock()
         headerTextEdit->setText(simulationManager->simulationLog->writeHeaderFromLogText(logTextEdit->toPlainText()));
     });
 
+    loggingCheckbox = new QCheckBox("Write to file");
+    loggingCheckbox->setChecked(simulationManager->simulationSettings->logging);
+    loggingCheckbox->setToolTip("<font>Turn on/off this option to write to a text log file every refresh/poll.</font>");
+    logSettingsGrid->addWidget(loggingCheckbox, 14, 1);
+    connect(loggingCheckbox, &QCheckBox::stateChanged, mainWindow, [ = ](const bool & i)
+    {
+        simulationManager->simulationSettings->logging = i;
+    });
+
+    appendCheckbox = new QCheckBox("Append running log");
+    loggingCheckbox->setToolTip("<font>Deselect to write a separate running log file every iteration.</font>");
+    logSettingsGrid->addWidget(appendCheckbox, 14, 2);
+    connect(appendCheckbox, &QCheckBox::stateChanged, mainWindow, [ = ](const bool & i)
+    {
+        simulationManager->simulationSettings->appendRunningLog = i;
+    });
+
     //RJG - placed here so other objects already exist
     QPushButton *defaultLogsButton = new QPushButton("v2.0.0 log");
     defaultLogsButton->setObjectName("defaultLogsButton");
@@ -2138,7 +2206,6 @@ QDockWidget *MainWindow::createLogSettingsDock()
 
         }
     });
-
 
     //RJG - placed here so other objects already exist
     QPushButton *defaultLogsButtonCSV = new QPushButton("v2.0.0 CSV log");
@@ -2218,6 +2285,13 @@ void MainWindow::resetSimulation()
     // Reset the information bar
     resetInformationBar();
 
+    //If we have burn in switched on, we need to make sure that happens as part of the reset
+    if (simulationManager->simulationSettings->speciesBurnIn) simulationManager->env->setCurrentFileNumber(-simulationManager->simulationSettings->speciesBurnInDuration);
+    else simulationManager->env->setCurrentFileNumber(0);
+
+    simulationManager->env->reset(0);
+    simulationManager->env->regenerate(simulationManager->simulationSettings->environmentMode, simulationManager->simulationSettings->environmentInterpolate);
+
     //RJG - This resets all the species logging stuff as well as setting up the run
     simulationManager->setupRun();
     nextRefresh = 0;
@@ -2284,16 +2358,6 @@ void MainWindow::changeEvent(QEvent *e)
  */
 void MainWindow::startSimulation()
 {
-
-    if (simulationManager->env->returnCurrentFileNumber() == -1)
-    {
-        QMessageBox::critical(nullptr, "", "Cannot start simulation without environment");
-        if (!loadEnvironmentFiles())
-        {
-            return;
-        }
-    }
-
     runSetUp();
 
     ui->LabelBatch->setText(tr("1/1"));
@@ -2328,16 +2392,6 @@ void MainWindow::startSimulation()
  */
 void MainWindow::runForNSimulation(int iterations)
 {
-    if (simulationManager->env->returnCurrentFileNumber() == -1)
-    {
-        QMessageBox::critical(nullptr, "", "Cannot start simulation without environment");
-        if (!loadEnvironmentFiles())
-        {
-            return;
-        }
-    }
-
-
     bool ok = false;
     int i;
     int numIterations;
@@ -2423,7 +2477,6 @@ void MainWindow::runForNSimulation(int iterations)
  */
 void MainWindow::startBatchSimulation()
 {
-
     //ARTS - set default vaules
     batchRunning = true;
     batchRuns = 0;
@@ -2507,16 +2560,6 @@ void MainWindow::startBatchSimulation()
 
         //And run...
         ui->LabelBatch->setText(tr("%1/%2").arg((batchRuns + 1)).arg(batchTargetRuns));
-
-        if (simulationManager->env->returnCurrentFileNumber() == -1)
-        {
-            QMessageBox::critical(nullptr, "", "Cannot start simulation without environment");
-            if (!loadEnvironmentFiles())
-            {
-                return;
-            }
-        }
-
         runSetUp();
         quint64 i = batchIterations;
         while (!stopFlag && i > 0)
@@ -2739,6 +2782,7 @@ void MainWindow::restartTimer()
  */
 void MainWindow::finishRun()
 {
+    report();  //needs to do logging
     // Run start action
     ui->actionStart_Sim->setEnabled(true);
     startButton->setEnabled(true);
@@ -3862,6 +3906,7 @@ bool MainWindow::loadEnvironmentFiles(QString folder)
 
     delete (simulationManager->env);
     simulationManager->env = new ImageSequence(files, simulationManager->simulationSettings->environmentChangeRate);
+    if (simulationManager->simulationSettings->speciesBurnIn) simulationManager->env->setCurrentFileNumber(simulationManager->simulationSettings->speciesBurnInDuration);
 
     refreshEnvironment();
 
@@ -4649,7 +4694,8 @@ void MainWindow::writeLog()
         simulationManager->simulationLog->setHeaderTextFromGUI(mainWindow->headerTextEdit->toPlainText());
         simulationManager->simulationLog->setIterationTextFromGUI(mainWindow->iterationTextEdit->toPlainText());
         simulationManager->simulationLog->setSpeciestTextFromGUI(mainWindow->logTextEdit->toPlainText());
-        simulationManager->simulationLog->writeLog(getSavePath(), batchNumber, LOG_CUSTOM);
+        if (simulationManager->simulationSettings->appendRunningLog)simulationManager->simulationLog->writeLog(getSavePath(), batchNumber, LOG_CUSTOM);
+        else simulationManager->simulationLog->writeLog(getSavePath(), batchNumber, LOG_CUSTOM, simulationManager->iteration);
     }
     if (ui->actionRecombination_logging->isChecked())simulationManager->simulationLog->writeLog(getSavePath(), batchNumber, LOG_RECOMBINATION);
     if (ui->actionFitness_logging_to_File->isChecked())simulationManager->simulationLog->writeLog(getSavePath(), batchNumber, LOG_FITNESS);
@@ -4899,6 +4945,8 @@ void MainWindow::loadSettings(QString fileName, bool calledFromCommandLine)
                 simulationManager->cellSettingsMaster->predationEfficiency = settingsFileIn.readElementText().toInt();
             if (settingsFileIn.name().toString() == "minDeltaPredatorness")
                 simulationManager->cellSettingsMaster->minDeltaPredatorness = settingsFileIn.readElementText().toInt();
+            if (settingsFileIn.name().toString() == "speciesBurnInDuration")
+                simulationManager->simulationSettings->speciesBurnInDuration = settingsFileIn.readElementText().toInt();
 
             //No Gui options for the remaining settings as yet.
             if (settingsFileIn.name().toString() == "speciesSamples")
@@ -4943,6 +4991,8 @@ void MainWindow::loadSettings(QString fileName, bool calledFromCommandLine)
                 simulationManager->cellSettingsMaster->variableBreed = settingsFileIn.readElementText().toInt();
             if (settingsFileIn.name().toString() == "logging")
                 simulationManager->simulationSettings->logging = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "appendRunningLog")
+                simulationManager->simulationSettings->appendRunningLog = intToBool(settingsFileIn.readElementText().toInt());
             if (settingsFileIn.name().toString() == "csvoutput")
                 simulationManager->simulationLog->csvOutput = intToBool(settingsFileIn.readElementText().toInt());
             if (settingsFileIn.name().toString() == "gui")
@@ -4969,10 +5019,13 @@ void MainWindow::loadSettings(QString fileName, bool calledFromCommandLine)
             }
             if (settingsFileIn.name().toString() == "randomReseedBeforeGenetic")
                 simulationManager->simulationSettings->randomReseedBeforeGenetic = intToBool(settingsFileIn.readElementText().toInt());
+            if (settingsFileIn.name().toString() == "speciesBurnIn")
+                simulationManager->simulationSettings->speciesBurnIn = intToBool(settingsFileIn.readElementText().toInt());
 
             //No gui options for below
             if (settingsFileIn.name().toString() == "fitnessLoggingToFile")
                 simulationManager->simulationSettings->fitnessLoggingToFile = intToBool(settingsFileIn.readElementText().toInt());
+
             //Only GUI options
             if (settingsFileIn.name().toString() == "autowrite")
                 autoWriteLogCheckbox->setChecked(settingsFileIn.readElementText().toInt());
@@ -5073,6 +5126,7 @@ void MainWindow::updateGUIFromVariables()
     pathogenFrequencySpin->setValue(simulationManager->cellSettingsMaster->pathogenFrequency);
     if (simulationManager->simulationSettings->pathogenMode == PATH_MODE_DRIFT)pathogenDriftRadio->setChecked(true);
     else pathogenEvolveRadio->setChecked(true);
+    speciesBurnInDurationSpin->setValue(simulationManager->simulationSettings->speciesBurnInDuration);
 
     // Add speciesMode
     speciesModeChanged(speciesMode, true);
@@ -5095,9 +5149,11 @@ void MainWindow::updateGUIFromVariables()
     asexualRadio->setChecked(simulationManager->cellSettingsMaster->asexual);
     variableBreedRadio->setChecked(simulationManager->cellSettingsMaster->variableBreed);
     loggingCheckbox->setChecked(simulationManager->simulationSettings->logging);
+    appendCheckbox->setChecked(simulationManager->simulationSettings->appendRunningLog);
     guiCheckbox->setChecked(simulationManager->simulationSettings->gui);
     interpolateCheckbox->setChecked(simulationManager->simulationSettings->environmentInterpolate);
     minSpeciesSizeSpin->setValue(simulationManager->simulationSettings->minSpeciesSize);
+    burnInCheckbox->setChecked(simulationManager->simulationSettings->speciesBurnIn);
 
     if (simulationManager->cellSettingsMaster->interactBlocks) BlockInteractionsRadio->setChecked(true);
     else XORRadio->setChecked(true);
@@ -5283,6 +5339,10 @@ void MainWindow::saveSettings(QString fileName)
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->cellSettingsMaster->croppingFrequency));
     settingsFileOut.writeEndElement();
 
+    settingsFileOut.writeStartElement("speciesBurnInDuration");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->speciesBurnInDuration));
+    settingsFileOut.writeEndElement();
+
     //Bools
     settingsFileOut.writeStartElement("recalculateFitness");
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->recalculateFitness));
@@ -5338,6 +5398,11 @@ void MainWindow::saveSettings(QString fileName)
 
     settingsFileOut.writeStartElement("variableBreed");
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->cellSettingsMaster->variableBreed));
+    settingsFileOut.writeEndElement();
+
+    //Bools
+    settingsFileOut.writeStartElement("appendRunningLog");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->appendRunningLog));
     settingsFileOut.writeEndElement();
 
     settingsFileOut.writeStartElement("logging");
@@ -5424,6 +5489,7 @@ void MainWindow::saveSettings(QString fileName)
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->predationRestriction));
     settingsFileOut.writeEndElement();
 
+<<<<<<< HEAD
     //HGT settings
 
     settingsFileOut.writeStartElement("hgtTransform");
@@ -5469,6 +5535,12 @@ void MainWindow::saveSettings(QString fileName)
     settingsFileOut.writeEndElement();
 
 
+=======
+    settingsFileOut.writeStartElement("speciesBurnIn");
+    settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->speciesBurnIn));
+    settingsFileOut.writeEndElement();
+
+>>>>>>> master
     //Strings
     settingsFileOut.writeStartElement("globalSavePath");
     settingsFileOut.writeCharacters(getSavePath());
@@ -5583,11 +5655,6 @@ void MainWindow::updateGenomeComparisonDockVisibility(bool checked)
     genomeComparisonButton->setChecked(checked);
 }
 
-void MainWindow::processAppEvents()
-{
-    qApp->processEvents();
-}
-
 bool MainWindow::boolStringToBool(QString s)
 {
     if (s == "1") return true;
@@ -5682,10 +5749,13 @@ void MainWindow::setOptionsFromParser(QHash<QString, QString> *options)
         simulationManager->simulationLog->setSpeciestTextFromGUI(mainWindow->logTextEdit->toHtml());
         simulationManager->simulationSettings->logging = true;
     }
+    if (options->contains("appendRunningLog"))simulationManager->simulationSettings->appendRunningLog = boolStringToBool(options->value("appendRunningLog"));
     if (options->contains("minpredatorscore")) simulationManager->cellSettingsMaster->minDeltaPredatorness = options->value("minpredatorscore").toInt();
     if (options->contains("predationefficiency")) simulationManager->cellSettingsMaster->predationEfficiency = options->value("predationefficiency").toInt();
 
     if (options->contains("nonspatial")) simulationManager->simulationSettings->nonspatial = boolStringToBool(options->value("nonspatial"));
+    if (options->contains("speciesburnin"))simulationManager->simulationSettings->speciesBurnIn = boolStringToBool(options->value("speciesburnin"));
+    if (options->contains("speciesburninduration"))simulationManager->simulationSettings->speciesBurnInDuration = options->value("speciesburninduration").toInt();
     if (options->contains("polling"))
     {
         qInfo() << "Setting polling to " << options->value("polling").toInt();

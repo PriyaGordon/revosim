@@ -17,6 +17,7 @@ bool VariableHgtLenSystem::setGenomeWordsFromString(QString s, int maxsize)
 // PG - Use genome to determine the length of transfer
 quint32 VariableHgtLenSystem::transferLength(const quint32 *genome){
 
+    //- The system has been limited so the words in use for this system must be less or equal to number of words in transformable genome to stop distribution problems
     //- if the transformable genome size has changed, set to match then recreate the linear distribution
     if (transformableGenomeSize != simulationManager->hgtSystem->returnUseGenomeWordsCount())
     {
@@ -48,14 +49,18 @@ quint32 VariableHgtLenSystem::transferLength(const quint32 *genome){
 void VariableHgtLenSystem::createCumulativeLinearDistribution()
 {
     cumulativeDistribution.clear();
-    quint32 max = transformableGenomeSize * 32;
-    quint32 step = (transformableGenomeSize * 32) / (useGenomeWordsCount * 32);  //- Need to think about this because might not work for genome sizes not divisible by genome words in use eg genome size 96 and there are 2 words in use
-    for (int i = 0; i < useGenomeWordsCount * 32; i++)
+    //- set number of bits in word controlling length and able to transform
+    quint32 steps = useGenomeWordsCount * 32;
+    quint32 max  = transformableGenomeSize * 32;
+
+    for (quint32 i = 0; i < steps; ++i)
     {
-        cumulativeDistribution.append(max - (step * i));
+        //- get distribution value from full transformable length minus itself multiplied distribution step number divided by number of steps to allow different transformable words to len system ratio
+        quint32 value = max - ((i * max) / steps);
+        cumulativeDistribution.append(value);
     }
-    //qDebug()<< cumulativeDistribution ;
- }
+    // qDebug() << cumulativeDistribution;
+}
 
 //PG - for logging
 quint32 VariableHgtLenSystem::returnBitcount(const quint32 *genome)

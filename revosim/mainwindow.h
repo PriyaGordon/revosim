@@ -228,13 +228,10 @@ private:
     QSpinBox *pathogenMutateSpin{};
     QSpinBox *pathogenFrequencySpin{};
     QSpinBox *croppingFrequencySpin{};
-<<<<<<< HEAD
     QSpinBox *transferlengthSpin{};
     QSpinBox *transferchanceSpin{};
     QSpinBox *transfermaxdifferenceSpin{};
-=======
     QSpinBox *speciesBurnInDurationSpin{};
->>>>>>> master
 
     //RJG - text edits for logs
     QTextEdit *headerTextEdit;

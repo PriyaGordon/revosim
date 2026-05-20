@@ -18,7 +18,6 @@ public:
 
 private:
     void createCumulativeLinearDistribution();
-    void createCumulativeLogLinearDistribution();
 };
 
 #endif // VARIABLEHGTPROBSYSTEM_H

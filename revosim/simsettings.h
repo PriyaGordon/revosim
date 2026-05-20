@@ -22,11 +22,8 @@ public:
     int trophicSeedMode;
     int genomeSize;
     int reseedMode;
-<<<<<<< HEAD
     int hgtMode;
-=======
     int speciesBurnInDuration;
->>>>>>> master
 
     quint8 environmentMode;
     qint16 a_priori_interaction[4][4];
@@ -49,15 +46,12 @@ public:
     bool environmentInterpolate;
     bool linkagesOn;
     bool randomReseedBeforeGenetic;
-<<<<<<< HEAD
     bool hgtrandomlength;
     bool variableHgtProb;
     bool variableHgtLen;
     bool variableHgtId;
     bool hgtId;
-=======
     bool speciesBurnIn;
->>>>>>> master
 };
 
 #endif // SIMSETTINGS_H

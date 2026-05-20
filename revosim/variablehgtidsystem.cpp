@@ -46,7 +46,7 @@ bool VariableHgtIdSystem::tryTransform(quint32* genome, quint32* maskofgenome, q
     //- reset bit count to 0 for sequence difference evaluation
     bitcount=0;
 
-    for (int i = 0; i < simulationManager->hgtSystem->useGenomeWordsCount; i++) // CHECK WORD COUNT IS RIGHT HERE
+    for (int i = 0; i < simulationManager->hgtSystem->useGenomeWordsCount; i++)
     {
         //Get XORed genome of the two masks to get bit difference between the transfer sequence
         quint32 genomeWord = maskofgenome[i] ^ maskofdonor[i];

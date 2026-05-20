@@ -11,7 +11,6 @@ VariableHgtProbSystem::VariableHgtProbSystem() : System("Variable HGT System")
 bool VariableHgtProbSystem::setGenomeWordsFromString(QString s, int maxsize)
 {
     bool returnValue = System::setGenomeWordsFromString(s, maxsize);
-    //if (returnValue) createCumulativeLogLinearDistribution();
     if (returnValue) createCumulativeLinearDistribution();
     return returnValue;
 }
@@ -44,32 +43,7 @@ bool VariableHgtProbSystem::variableWillTransform(const quint32 *genome)
 }
 
 
-//PG - create linear distribution between 10^-1 and 10^-3 chance for bit count
-void VariableHgtProbSystem::createCumulativeLogLinearDistribution()
-{
-
-    cumulativeDistribution.clear();
-
-    quint64 max = 1e3;
-    quint64 min = 1e1;
-    double step = (log10(max) - log10(min)) / ((useGenomeWordsCount* 32) - 1);
-
-    //- 0 at the beginning because the are 33 possible bitcounts
-    cumulativeDistribution.append(0);
-
-    for (int i = 0; i < useGenomeWordsCount * 32; i++)
-    {
-        double LogValue = log10(max) - (step * i);
-        double value = std::pow(10, LogValue);
-
-
-        cumulativeDistribution.append(static_cast<quint64>(value));
-    }
-    //qDebug() << cumulativeDistribution;
-}
-
-
-//PG - create log linear (semi-log) distribution between 10^-1 and 10^-3 chance for bit count
+//PG - create log linear distribution between 2 and 500 for bit count transformation probability
 void VariableHgtProbSystem::createCumulativeLinearDistribution()
 {
     // cumulativeDistribution.clear();
@@ -100,11 +74,12 @@ void VariableHgtProbSystem::createCumulativeLinearDistribution()
         //- get normalised multiplier by dividing by number of bits
         double normalised = double(i) / double(steps - 1);
         //- scale with multiplier, starting at 2 not 0 to allow the modulus function later
-        double value = min + normalised * double(max - min);
+        double value = min + (normalised * double(max - min));
         //- append rounded quint64 for the randomised number
         cumulativeDistribution.append(quint64(std::round(value)));
     }
-    // qDebug() << cumulativeDistribution;
+
+    //qDebug() << cumulativeDistribution;
 
 
 }

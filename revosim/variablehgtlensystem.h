@@ -15,10 +15,10 @@ public:
     quint32 returnBitcount(const quint32 *genome);
     int transformableGenomeSize;
     quint32 returnCumulativeDistributionAtN(int n);
+    void createCumulativeLinearDistribution();
 
 
 private:
-    void createCumulativeLinearDistribution();
     QVector <quint32> cumulativeDistribution;  
 };
 

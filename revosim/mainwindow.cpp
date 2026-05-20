@@ -1942,6 +1942,7 @@ QScrollArea *MainWindow::createWordsScrollArea()
         {
             hgt_word_label->changeColourTimer(Qt::darkGreen, 1000);
             wordsInUse.insert("Hgt", s);
+            simulationManager->variableHgtLenSystem->transformableGenomeSize = simulationManager->hgtSystem->returnUseGenomeWordsCount();
         }
         //qDebug()<<simulationManager->hgtSystem->returnGenomeWordInUseString();
     });
@@ -1987,7 +1988,6 @@ QScrollArea *MainWindow::createWordsScrollArea()
         {
             hgt_word_label_2->changeColour(Qt::red);
             return;
-
         }
         //+1 here due to zero counting - i.e. if we want to be using word 3, we need to be using 4 words.
         else if (max + 1 > genomeSizeSpin->value())genomeSizeSpin->setValue(max + 1);
@@ -1997,6 +1997,40 @@ QScrollArea *MainWindow::createWordsScrollArea()
         {
             hgt_word_label_2->changeColourTimer(Qt::darkGreen, 1000);
             wordsInUse.insert("Hgttransferlength", s);
+        }
+        //- limit number of words involved in length distribution to less than or equal to number of transformable words
+        int transformableWordCount = simulationManager->hgtSystem->returnUseGenomeWordsCount();
+        int lengthWordCount = simulationManager->variableHgtLenSystem->returnUseGenomeWordsCount();
+
+        if (lengthWordCount > transformableWordCount)
+        {
+
+            if (!autoFromCommand) QMessageBox::warning(this, "Be aware", "Word count determining variable transformation length must be less than or equal to number of transformable words");
+            hgt_word_label_2->changeColour(Qt::red);
+            return;
+        }
+        else {
+            hgt_word_label_2->changeColourTimer(Qt::darkGreen, 1000);
+            wordsInUse.insert("Hgttransferlength", s);
+        }
+    });
+    connect(hgt_word_edit_1, &QLineEdit::textChanged, this, [ = ](const QString & s)
+    {
+        //- reverse so if transformable word increases, check if variable len is shorter or equal and update the distribution
+        int transformableWordCount = simulationManager->hgtSystem->returnUseGenomeWordsCount();
+        int lengthWordCount = simulationManager->variableHgtLenSystem->returnUseGenomeWordsCount();
+
+        if ((lengthWordCount > transformableWordCount)| (!simulationManager->hgtSystem->setGenomeWordsFromString(s, genomeSizeSpin->value())))
+        {
+
+            if (!autoFromCommand) QMessageBox::warning(this, "Be aware", "Word count determining variable transformation length must be less than or equal to number of transformable words");
+            hgt_word_label_2->changeColour(Qt::red);
+            return;
+        }
+        else {
+            hgt_word_label_2->changeColourTimer(Qt::darkGreen, 1000);
+            simulationManager->variableHgtLenSystem->transformableGenomeSize = simulationManager->hgtSystem->returnUseGenomeWordsCount();
+            simulationManager->variableHgtLenSystem->createCumulativeLinearDistribution();
         }
     });
 
@@ -2023,6 +2057,12 @@ QScrollArea *MainWindow::createWordsScrollArea()
         {
             hgt_word_label_3->changeColourTimer(Qt::darkGreen, 1000);
             wordsInUse.insert("Hgttransferid", s);
+        }
+        // Currently ID matching system is limited to 1 genome word
+        if (simulationManager->variableHgtIdSystem->returnUseGenomeWordsCount() > 1){
+            if (!autoFromCommand) QMessageBox::warning(this, "Be aware", "Variable ID matching limited to one word");
+            hgt_word_label_3->changeColour(Qt::red);
+            return;
         }
     });
 
@@ -5489,7 +5529,6 @@ void MainWindow::saveSettings(QString fileName)
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->predationRestriction));
     settingsFileOut.writeEndElement();
 
-<<<<<<< HEAD
     //HGT settings
 
     settingsFileOut.writeStartElement("hgtTransform");
@@ -5535,12 +5574,10 @@ void MainWindow::saveSettings(QString fileName)
     settingsFileOut.writeEndElement();
 
 
-=======
     settingsFileOut.writeStartElement("speciesBurnIn");
     settingsFileOut.writeCharacters(QString("%1").arg(simulationManager->simulationSettings->speciesBurnIn));
     settingsFileOut.writeEndElement();
 
->>>>>>> master
     //Strings
     settingsFileOut.writeStartElement("globalSavePath");
     settingsFileOut.writeCharacters(getSavePath());

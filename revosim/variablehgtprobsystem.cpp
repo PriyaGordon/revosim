@@ -34,10 +34,9 @@ bool VariableHgtProbSystem::variableWillTransform(const quint32 *genome)
         return false;
     }
 
-    //qDebug() << cumulativeDistribution[bitcount];
-    //generate random number between 1 and value from cumlative distribution, return true if number is 1
-    quint64 number = (simulationManager->simulationRandoms->rand64() % cumulativeDistribution[bitcount]);
-    return (number == 1);
+    //generate random number between 1 and value from 1000, transform if number is less than distrubution value
+    quint64 number = (simulationManager->simulationRandoms->rand64() % 1000);
+    return (number < cumulativeDistribution[bitcount]);
 
     //qDebug() << cumulativeDistribution;
 }
@@ -46,23 +45,8 @@ bool VariableHgtProbSystem::variableWillTransform(const quint32 *genome)
 //PG - create log linear distribution between 2 and 500 for bit count transformation probability
 void VariableHgtProbSystem::createCumulativeLinearDistribution()
 {
-    // cumulativeDistribution.clear();
-    // quint64 max = 500;
-    // quint64 min = 2;
-    // int steps = useGenomeWordsCount * 32;
-
-    // quint64 step = (max - min) /(steps-1);
-
-    // //- 0 at the beginning because the are 33 possible bitcounts
-    // cumulativeDistribution.append(0);
-
-    // for (int i = 0; i < steps; i++) {
-    //     cumulativeDistribution.append(min + (step * i));
-    // }
-    // qDebug() << cumulativeDistribution;
 
     cumulativeDistribution.clear();
-
     double max = 500.0;
     double min = 2.0;
 
@@ -80,8 +64,6 @@ void VariableHgtProbSystem::createCumulativeLinearDistribution()
     }
 
     //qDebug() << cumulativeDistribution;
-
-
 }
 
 //PG - stolen for logging

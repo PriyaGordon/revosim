@@ -173,6 +173,13 @@ QString LogSimulation::printSettings()
         settingsOut << "-- Interaction attempts per organism per iteration: " << cellsettings.interactions << "\n";
         settingsOut << "-- Cropping rate: " << cellsettings.croppingFrequency << "\n";
         settingsOut << "-- Species burn in duration: " << simSettings->speciesBurnInDuration << "\n";
+        settingsOut << "-- Transformation probability" << cellsettings.hgtTransferChance << "\n";
+        settingsOut << "-- Transformation length" << cellsettings.hgtTransferLength << "\n";
+        settingsOut << "-- Species burn in duration: " << simSettings->speciesBurnInDuration << "\n";
+        settingsOut << "-- Max difference to transform " << simSettings->maxDifferenceHgt << "\n";
+        settingsOut << "-- Max difference to transform " << simSettings->maxDifferenceHgt << "\n";
+
+
 
         settingsOut << "\n- Bools:\n";
         settingsOut << "-- Recalculate fitness: " << simSettings->recalculateFitness << "\n";
@@ -191,6 +198,15 @@ QString LogSimulation::printSettings()
         settingsOut << "-- Multiple breed lists: " << cellsettings.multiBreedList << "\n";
         settingsOut << "-- Random reseed before genetic: " << simSettings->randomReseedBeforeGenetic << "\n";
         settingsOut << "-- Species burnin: "  << simSettings->speciesBurnIn << "\n";
+        settingsOut << "-- Variable transformation"  << simSettings->variableHgtProb << "\n";
+        settingsOut << "-- Transformation"  << cellsettings.hgtTransform << "\n";
+        settingsOut << "-- Varible transformation length" << simSettings->variableHgtLen << "\n";
+        settingsOut << "-- Random transformation length" << simSettings->hgtrandomlength << "\n";
+        settingsOut << "-- Variable transformation ID" << simSettings->variableHgtId << "\n";
+        settingsOut << "-- Transformation type";
+        if (simSettings->hgtMode == HGT_SYNOYMOUS) settingsOut << "same" << "\n";
+        else settingsOut << "shifted" << "\n";
+
 
         settingsOut << "-- Breeding: ";
         if (cellsettings.obligateSexual) settingsOut << "obligate sexual" << "\n";
@@ -198,7 +214,7 @@ QString LogSimulation::printSettings()
         else if (cellsettings.asexual) settingsOut << "asexual" << "\n";
         else settingsOut << "variable" << "\n";
 
-        settingsOut << "-- Pathogen mopde: ";
+        settingsOut << "-- Pathogen mode: ";
         if (simulationManager->simulationSettings->pathogenMode == PATH_MODE_DRIFT) settingsOut << "Drift\n";
         else settingsOut << "Evolve\n";
 
@@ -894,12 +910,12 @@ QString LogSimulation::writeVariableHgtProbHeader()
     if (csvOutput)  out << "Number of ones,Probability of transformation occuring\n";
     else  out << "Number of ones\tProbability of transformation occuring\n";
 
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 33; i++)
     {
         quint32 n = simulationManager->variableHgtProbSystem->returnCumulativeDistributionAtN(i);
 
-        if (csvOutput) out << i << "," << n << " out of 1000" << "\n";
-        else out << i << "\t" << "1/" <<  n << "\n";
+        if (csvOutput) out << i << "," << n << "/1000" << "\n";
+        else out << i << "\t" << n << "/1000" << "\n";
 
     }
 

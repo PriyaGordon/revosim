@@ -47,7 +47,7 @@ void VariableHgtProbSystem::createCumulativeLinearDistribution()
 {
 
     cumulativeDistribution.clear();
-    double max = 500.0;
+    double max = 482.0;
     double min = 2.0;
 
     //- number of bits + 1 possible outcomes
@@ -62,7 +62,6 @@ void VariableHgtProbSystem::createCumulativeLinearDistribution()
         //- append rounded quint64 for the randomised number
         cumulativeDistribution.append(quint64(std::round(value)));
     }
-
     //qDebug() << cumulativeDistribution;
 }
 
